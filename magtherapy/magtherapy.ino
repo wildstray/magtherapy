@@ -132,7 +132,7 @@ void setup()
     _delay_ms(500);
 
     EEPROM.get(0, mysettings);
-//    if (mysettings.tmax == 0 || mysettings.tprog == 0)
+    if (mysettings.tmax == 0 || mysettings.tprog == 0)
     {
         mysettings.tmax = TMAX_DEFAULT;
         mysettings.tprog = TPROG_DEFAULT;
@@ -361,6 +361,7 @@ void settingmenu()
         last = keys;
         _delay_ms(100);
     }
+    EEPROM.put(0, mysettings);
 }
 
 void loop() 
