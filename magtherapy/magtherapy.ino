@@ -49,7 +49,6 @@ uint32_t ticks;
 uint16_t seconds;
 uint16_t frequency;
 uint8_t  program;
-uint8_t  time;
 uint16_t tmax;
 bool     running;
 bool     manual;
@@ -120,7 +119,7 @@ uint8_t _msb(uint8_t n)
 }
 
 void setup() 
-{
+{   
     DDRB |= _BV(PB5);         // PB5 mode output
     DDRD |= _BV(PD6);         // PD6 mode output
     DDRD &= ~_BV(PD2);        // PD2 mode input
@@ -186,7 +185,7 @@ ISR(TIMER1_COMPA_vect)
     TCCR0A |= _BV(WGM01) | _BV(COM0A0);
     TCCR0B |= _BV(CS00);
     pulse1++;
-    if (pulse1 & 64)
+    if (pulse1 & 64) // debug
     {
         PORTB ^= _BV(PB5);
     }
@@ -292,75 +291,80 @@ void start(int8_t _program = 0, bool automatic = true)
 
 void settingmenu()
 {
-    byte last, _min, _sec;
+    byte _min, _sec, setting = 1;
     char text[8];
-    byte setting = 1;
-    while (module.getButtons() != 0) {}
+    uint16_t _tprog = mysettings.tprog;
+    uint16_t _tmax = mysettings.tmax;
+    byte last = module.getButtons();
     while (setting)
     {
-        byte keys = module.getButtons();
+        volatile byte keys = module.getButtons();
+
         switch (setting)
         {
             case 1:
                 switch (keys) 
                 {
                     case S1:
-                        if (keys != last && mysettings.tprog > TPROG_MIN)
+                        if (keys != last && _tprog > TPROG_MIN)
                             beep();
-                        if (mysettings.tprog > TPROG_MIN)
-                            mysettings.tprog--;
+                        if (_tprog > TPROG_MIN)
+                            _tprog--;
                         break;
                     case S2:
-                            if (keys != last && mysettings.tprog < TPROG_MAX)
-                                beep();
-                            if (mysettings.tprog < TPROG_MAX)
-                                mysettings.tprog++;
-                            break;
+                        if (keys != last && _tprog < TPROG_MAX)
+                            beep();
+                        if (_tprog < TPROG_MAX)
+                            _tprog++;
+                        break;
                     case S7:
                         if (keys != last)
                         {
                             beep();
                             setting = 2;
-                         }
-                         break;
+                        }
+                        break;
                 }
-                _sec = mysettings.tprog % 60;
-                _min = mysettings.tprog / 60;
+                last = keys;
+                _sec = _tprog % 60;
+                _min = _tprog / 60;
                 sprintf(text, "T%1i  %02d%02d", 1, _min, _sec);
                 break;
             case 2:
                 switch (keys) 
                 {
                     case S1:
-                        if (keys != last && mysettings.tmax > TMIN_DEFAULT)
+                        if (keys != last && _tmax > TMIN_DEFAULT)
                             beep();
-                        if (mysettings.tmax > TMIN_DEFAULT)
-                            mysettings.tmax--;
+                        if (_tmax > TMIN_DEFAULT)
+                            _tmax--;
                         break;
                     case S2:
-                            if (keys != last && mysettings.tmax < TMAX_DEFAULT)
-                                beep();
-                            if (mysettings.tmax < TMAX_DEFAULT)
-                                mysettings.tmax++;
-                            break;
+                        if (keys != last && _tmax < TMAX_DEFAULT)
+                            beep();
+                        if (_tmax < TMAX_DEFAULT)
+                            _tmax++;
+                        break;
                     case S7:
                         if (keys != last)
                         {
                             beep();
                             setting = 0;
-                         }
-                         break;
+                        }
+                        break;
                 }
-                _sec = mysettings.tmax % 60;
-                _min = mysettings.tmax / 60;
+                last = keys;
+                _sec = _tmax % 60;
+                _min = _tmax / 60;
                 sprintf(text, "T%1i  %02d%02d", 2,  _min, _sec);
                 break;
         }
         module.setLEDs(0);
         module.setDisplayToString(text, _BV(2));
-        last = keys;
         _delay_ms(100);
     }
+    mysettings.tprog = _tprog;
+    mysettings.tmax = _tmax;
     EEPROM.put(0, mysettings);
 }
 
