@@ -298,7 +298,7 @@ void settingmenu()
     byte last = module.getButtons();
     while (setting)
     {
-        volatile byte keys = module.getButtons();
+        byte keys = module.getButtons();
 
         switch (setting)
         {
